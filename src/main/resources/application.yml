@@ -1,0 +1,13 @@
+server:
+  port: 80
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: eureka_server
+          uri: http://localhost:8761/
+          predicates:
+            - Path=/eureka, /eureka/**
+          filters:
+            - RewritePath=/eureka, /
