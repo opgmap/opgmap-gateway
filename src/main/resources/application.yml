@@ -1,13 +1,60 @@
+# ----- server ------
 server:
   port: 80
 
+# ----- eureka -----
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
 spring:
+  application:
+    name: GATEWAY
+  # ----- Cloud -----
   cloud:
     gateway:
+      httpclient:
+        wiretap: true
+      httpserver:
+        wiretap: true
       routes:
-        - id: eureka_server
+        - id: danger_zone_service
+          uri: lb://DANGER_ZONE_SERVICE
+          predicates:
+            - Path=/api/v1/danger-zone/**
+        # Eureka server
+        - id: eureka_server_web
           uri: http://localhost:8761/
           predicates:
-            - Path=/eureka, /eureka/**
+            - Path=/eureka/web
           filters:
-            - RewritePath=/eureka, /
+            - SetPath=/
+        # Eureka server static
+        - id: eureka_server_static
+          uri: http://localhost:8761/
+          predicates:
+            - Path=/eureka/**
+        # Authentication server
+        - id: auth_server
+          uri: http://localhost:8888
+          predicates:
+            - Path=/login/oauth2/**, /resources/**
+          filters:
+            - RewritePath=/login/oauth2/?(?<segment>.*), /realms/opgmap/protocol/openid-connect/$\{segment}
+  # ----- Security -----
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8888/realms/opgmap
+
+# ----- Logging -----
+logging:
+  level:
+    reactor:
+      netty: INFO
+    org:
+      springframework:
+        cloud:
+          gateway: TRACE
