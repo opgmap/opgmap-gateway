@@ -1,12 +1,12 @@
-# ----- server ------
-server:
-  port: 80
-
 # ----- eureka -----
 eureka:
+  instance:
+    hostname: ${EUREKA_CLIENT_HOST:localhost}
   client:
+    registerWithEureka: true
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka/
+    fetch-registry: true
 
 spring:
   application:
@@ -20,34 +20,40 @@ spring:
         wiretap: true
       routes:
         - id: danger_zone_service
-          uri: lb://DANGER_ZONE_SERVICE
+          uri: lb://DANGER-ZONE-SERVICE
           predicates:
             - Path=/api/v1/danger-zone/**
         # Eureka server
         - id: eureka_server_web
-          uri: http://localhost:8761/
+          uri: ${EUREKA_URL:http://localhost:8761}
           predicates:
             - Path=/eureka/web
           filters:
             - SetPath=/
         # Eureka server static
         - id: eureka_server_static
-          uri: http://localhost:8761/
+          uri: ${EUREKA_URL:http://localhost:8761}
           predicates:
             - Path=/eureka/**
         # Authentication server
-        - id: auth_server
-          uri: http://localhost:8888
-          predicates:
-            - Path=/login/oauth2/**, /resources/**
-          filters:
-            - RewritePath=/login/oauth2/?(?<segment>.*), /realms/opgmap/protocol/openid-connect/$\{segment}
+        # - id: auth_server
+        #   uri: http://localhost:8888
+        #   predicates:
+        #     - Path=/login/oauth2/**, /resources/**
+        #   filters:
+        #     - RewritePath=/login/oauth2/?(?<segment>.*), /realms/opgmap/protocol/openid-connect/$\{segment}
   # ----- Security -----
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8888/realms/opgmap
+          jwk-set-uri: ${KEYCLOAK_REALM_URL:http://localhost:8888/realms/opgmap}/protocol/openid-connect/certs
+
+auth:
+  jwt:
+    secret-key: nN4=k-!}ptqESmcG?-@Tw#B_f'4IQLQYJ`Sd+bx*AnIn1gTd'#yfUN,6)CK<-&&
+    aud: opgmap.internal.services
+    iss: opgmap.gateway
 
 # ----- Logging -----
 logging:
@@ -57,4 +63,4 @@ logging:
     org:
       springframework:
         cloud:
-          gateway: TRACE
+          gateway: DEBUG
