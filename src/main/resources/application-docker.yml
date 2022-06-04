@@ -1,19 +1,27 @@
 eureka:
   instance:
-    hostname: localhost
+    hostname: ${EUREKA_CLIENT_HOST}
   client:
     registerWithEureka: true
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL}/eureka/
     fetch-registry: true
 
 spring:
   application:
     name: GATEWAY
-  zipkin:
-    base-url: http://localhost:9411/
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
       httpclient:
         wiretap: true
       httpserver:
@@ -25,21 +33,21 @@ spring:
           predicates:
             - Path=/api/v1/comment/**, /comment/**
           filters:
-            - RewritePath=^/comment/(?<path>.*), /$\{path}
+            - RewritePath=/comment/(?<path>.*), /$\{path}
         # Reports service
         - id: reports-service
           uri: lb://REPORTS-SERVICE
           predicates:
             - Path=/api/v1/reports/**, /reports/**
           filters:
-            - RewritePath=^/reports/(?<path>.*), /$\{path}
+            - RewritePath=/reports/(?<path>.*), /$\{path}
         # Danger zone service
         - id: danger-zone-service
           uri: lb://DANGER-ZONE-SERVICE
           predicates:
             - Path=/api/v1/danger-zone/**, /danger-zone/**
           filters:
-            - RewritePath=^/danger-zone/(?<path>.*), /$\{path}
+            - RewritePath=/danger-zone/(?<path>.*), /$\{path}
         # Eureka server
         - id: eureka-server-web
           uri: ${eureka.client.serviceUrl.defaultZone}
