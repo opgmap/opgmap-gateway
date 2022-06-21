@@ -10,6 +10,8 @@ eureka:
 spring:
   application:
     name: GATEWAY
+  zipkin:
+    base-url: ${ZIPKIN_URL}
   cloud:
     gateway:
       globalcors:
@@ -27,6 +29,13 @@ spring:
       httpserver:
         wiretap: true
       routes:
+        # Users service
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/v1/user/**, /user/**
+          filters:
+            - RewritePath=^/user/(?<path>.*), /$\{path}
         # Comments service
         - id: comment-service
           uri: lb://COMMENT-SERVICE
